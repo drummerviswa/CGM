@@ -1,18 +1,18 @@
-#include <iostream>
-#include <math.h>
-#include <time.h>
 #include <GL/glut.h>
-#include <GL/glu.h>
-#include <GL/gl.h>
+#include <iostream>
+
 using namespace std;
-void delay(unsigned int mseconds)
-{
-    clock_t goal = mseconds + clock();
-}
+
+int mode = 0; // 1 - translate, 2 - rotate, 3 - scale
+
+int squareX = 200, squareY = 200;
+float angle = 0.0f;
+int scaleSize = 20;
+bool scaleUp = true;
+
 void drawSquare(int x, int y, int s)
 {
     double halfside = s / 2;
-    glColor3d(1.0, 0.0, 1.0);
     glBegin(GL_POLYGON);
     glVertex2d(x + halfside, y + halfside);
     glVertex2d(x + halfside, y - halfside);
@@ -20,70 +20,91 @@ void drawSquare(int x, int y, int s)
     glVertex2d(x - halfside, y + halfside);
     glEnd();
 }
-void rotateSquare(int px, int py)
+
+void display()
 {
-    drawSquare(px, py, 10);
-    glRotatef(30.0, 0.0, 0.0, 1.0);
-    drawSquare(px, py, 10);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1.0, 0.0, 1.0);
+
+    glPushMatrix();
+
+    if (mode == 1)
+    {
+        drawSquare(squareX, squareY, 20);
+    }
+    else if (mode == 2)
+    {
+        glTranslatef(100, 100, 0);
+        glRotatef(angle, 0, 0, 1);
+        drawSquare(0, 0, 20);
+    }
+    else if (mode == 3)
+    {
+        drawSquare(100, 100, scaleSize);
+    }
+
+    glPopMatrix();
     glFlush();
 }
-void translateSquare(int px, int py, int tx, int ty)
+
+void timer(int value)
 {
-    int fx = px, fy = py;
-    while (1)
+    if (mode == 1)
     {
-        glClear(GL_COLOR_BUFFER_BIT);
-        px = px + tx;
-        py = py + ty;
-        if (px > 400 || px < 0 || py > 400 || py < 0)
+        squareX += 1;
+        squareY += 1;
+        if (squareX > 400 || squareY > 400)
         {
-            px = fx;
-            py = fy;
+            squareX = 0;
+            squareY = 0;
         }
-        drawSquare(px, py, 20);
-        glFlush();
-        delay(10);
     }
-}
-void scaleSquare(int px, int py, int s)
-{
-    while (1)
+    else if (mode == 2)
     {
-        glClear(GL_COLOR_BUFFER_BIT);
-        drawSquare(px, py, 20);
-        glFlush();
-        delay(500);
-        drawSquare(px, py, s);
-        glFlush();
-        delay(500);
+        angle += 5.0f;
+        if (angle >= 360.0f)
+            angle = 0.0f;
     }
+    else if (mode == 3)
+    {
+        if (scaleUp)
+            scaleSize += 2;
+        else
+            scaleSize -= 2;
+
+        if (scaleSize > 40)
+            scaleUp = false;
+        if (scaleSize < 20)
+            scaleUp = true;
+    }
+
+    glutPostRedisplay();
+    glutTimerFunc(50, timer, 0);
 }
-void display(void)
+
+void init()
 {
-    int opt;
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+    gluOrtho2D(0.0, 400, 0.0, 400);
+}
+
+int main(int argc, char **argv)
+{
     cout << "\nEnter\n\t<1> for translation"
             "\n\t<2> for rotation"
             "\n\t<3> for scaling\n\t:";
-    cin >> opt;
-    switch (opt)
-    {
-    case 1:
-        translateSquare(200, 200, 1, 5);
-        break;
-    case 2:
-        rotateSquare(100, 100);
-        break;
-    case 3:
-        scaleSquare(100, 100, 40);
-    }
-}
-int main(int argc, char **argv)
-{
+    cin >> mode;
+
     glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
     glutInitWindowSize(400, 400);
     glutInitWindowPosition(400, 400);
     glutCreateWindow("2D Transformations");
+
+    init();
+
     glutDisplayFunc(display);
-    gluOrtho2D(0.0, 400, 0.0, 400);
+    glutTimerFunc(50, timer, 0);
     glutMainLoop();
+    return 0;
 }
